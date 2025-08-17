@@ -1,1 +1,92 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AI Meeting Notes Summarizer</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    textarea, input { width: 100%; margin-top: 10px; }
+    textarea { height: 150px; }
+    #summary { height: 200px; }
+    button { margin-top: 10px; padding: 10px; }
+  </style>
+</head>
+<body>
+  <h1>AI Meeting Notes Summarizer</h1>
+
+  <!-- Transcript input -->
+  <label>Paste Transcript:</label>
+  <textarea id="transcript"></textarea>
+
+  <!-- Or upload -->
+  <label>Or Upload Transcript File:</label>
+  <input type="file" id="fileInput" accept=".txt">
+
+  <!-- Prompt -->
+  <label>Custom Instruction/Prompt:</label>
+  <input type="text" id="prompt" placeholder="e.g. Summarize in bullet points for executives">
+
+  <button onclick="generateSummary()">Generate Summary</button>
+
+  <!-- Editable summary -->
+  <h3>Generated Summary (Editable):</h3>
+  <textarea id="summary"></textarea>
+
+  <!-- Email share -->
+  <label>Send To (comma separated emails):</label>
+  <input type="text" id="emails" placeholder="example1@mail.com, example2@mail.com">
+  <button onclick="sendEmail()">Send Summary</button>
+
+  <script>
+    // Load transcript from file
+    document.getElementById('fileInput').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+          document.getElementById('transcript').value = ev.target.result;
+        };
+        reader.readAsText(file);
+      }
+    });
+
+    async function generateSummary() {
+    const transcript = document.getElementById('transcript').value;
+    const prompt = document.getElementById('prompt').value;
+
+    const res = await fetch('/summarize', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ transcript, prompt })
+  });
+
+  const data = await res.json();
+
+  if (res.ok) {
+    document.getElementById('summary').value = data.summary;
+  } else {
+    alert("❌ Error: " + data.error);
+  }
+}
+
+
+    async function sendEmail() {
+  const summary = document.getElementById('summary').value;
+  const emails = document.getElementById('emails').value;
+
+  const res = await fetch('/send-email', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      to: emails,                       // 👈 match backend
+      subject: "Meeting Summary",       // 👈 default subject
+      summary: summary
+    })
+  });
+  const data = await res.json();
+  alert(data.message || data.error);
+}
+  </script>
+</body>
+</html>
